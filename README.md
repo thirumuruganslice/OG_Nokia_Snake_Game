@@ -1,21 +1,29 @@
-# Snake Game
+# 🐍 Snake Classic — Modern Edition
 
-A classic snake game built with HTML5 canvas, JavaScript, and CSS. Control the snake, avoid hitting yourself, and keep moving as the game speeds up.
+A premium-quality Snake game inspired by the original Nokia Snake, combining nostalgic gameplay with a modern UI, smooth 60 FPS animations, and procedural sound design.
+
 
 ## Features
 
-- Smooth canvas rendering with a glowing snake style
-- Keyboard and touch controls (WASD/arrow keys and mobile buttons)
-- Pause support (P or Escape)
-- High score saved in local storage
+- **5 Snake Skins** — Classic Green, Neon Glow, Retro Pixel, Gold Metallic, Dark Minimal
+- **5 Maps** — Classic Border, No Walls (wrap-around), Obstacle Box, Maze, Speed Challenge
+- **Settings** — Sound, Music, Speed, Theme (Light/Dark), Control Scheme
+- **Smooth Animations** — Canvas-based 60 FPS rendering with particle effects
+- **Procedural Audio** — Web Audio API synth sounds (no external files needed)
+- **Responsive** — Desktop, tablet, and mobile with on-screen controls + swipe gestures
+- **Persistent Storage** — High score, settings, and preferences saved in localStorage
 
-## How to Play
+## Controls
 
-- Move with arrow keys or WASD
-- Eat food to grow and increase score
-- Do not collide with yourself
-- Press P or Escape to pause/resume
+| Action | Keys                       |
+| ------ | -------------------------- |
+| Move   | Arrow Keys / WASD          |
+| Pause  | Escape / P                 |
+| Mobile | On-screen buttons or swipe |
 
-## Run Locally
+## Tech Stack
 
-Open index.html in your browser.
+- HTML5 Canvas
+- CSS3 with custom animations
+- Vanilla JavaScript (ES6+)
+- Web Audio API

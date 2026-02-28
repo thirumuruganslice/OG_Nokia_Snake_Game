@@ -15,3 +15,8 @@ node_modules/
 # Env files
 .env
 .env.*
+
+# Sample files
+sample.css
+sample.js
+sample.html

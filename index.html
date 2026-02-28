@@ -3,156 +3,287 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Snake Game</title>
-    <link rel="stylesheet" href="assets/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;700&display=swap"
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Classic — Modern Edition</title>
+    <link rel="stylesheet" href="index.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 </head>
 
 <body>
-    <div id="app">
-        <!-- ============ START SCREEN ============ -->
-        <div id="screen-start" class="screen active">
-            <div class="nokia-frame">
-                <div class="nokia-screen">
-                    <h1 class="game-title">SNAKE</h1>
-                    <div class="snake-logo">
-                        <svg viewBox="0 0 120 60" width="120" height="60">
-                            <path d="M10 50 Q10 30 30 30 Q50 30 50 15 Q50 5 65 5 Q80 5 80 15 Q80 30 100 30 L110 30"
-                                fill="none" stroke="var(--snake-color)" stroke-width="6" stroke-linecap="round" />
-                            <circle cx="112" cy="28" r="2" fill="var(--bg-dark)" />
-                        </svg>
-                    </div>
-                    <div class="menu-options">
-                        <button id="btn-play" class="menu-btn selected">
-                            <span class="btn-icon">&#9654;</span> Start Game
-                        </button>
-                        <button id="btn-how" class="menu-btn">
-                            <span class="btn-icon">?</span> How to Play
-                        </button>
-                    </div>
-                    <div class="high-score-display">
-                        BEST: <span id="start-highscore">0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- ============ HOW TO PLAY SCREEN ============ -->
-        <div id="screen-how" class="screen">
-            <div class="nokia-frame">
-                <div class="nokia-screen">
-                    <h2 class="screen-title">HOW TO PLAY</h2>
-                    <div class="instructions">
-                        <div class="instruction-row">
-                            <div class="key-group">
-                                <span class="key">W</span><span class="key">A</span><span class="key">S</span><span
-                                    class="key">D</span>
-                            </div>
-                            <span class="or-text">or</span>
-                            <div class="key-group">
-                                <span class="key">&#8593;</span><span class="key">&#8592;</span><span
-                                    class="key">&#8595;</span><span class="key">&#8594;</span>
-                            </div>
-                        </div>
-                        <p class="instruction-text">Move the snake to eat food</p>
-                        <p class="instruction-text">Don't hit walls or yourself!</p>
-                        <p class="instruction-text small">Swipe on mobile to move</p>
-                        <p class="instruction-text small">Press <span class="key small">P</span> to pause</p>
-                    </div>
-                    <button id="btn-back" class="menu-btn">
-                        <span class="btn-icon">&#9664;</span> Back
+    <!-- ═══════════════════════ BACKGROUND ═══════════════════════ -->
+    <div class="bg-wave-wrapper"></div>
+
+    <!-- ═══════════════════════ HOME PAGE ═══════════════════════ -->
+    <div id="page-home" class="page active">
+        <div class="home-layout">
+            <!-- Left: Main Card -->
+            <div class="home-main">
+                <h1 class="game-title">SNAKE</h1>
+                <p class="game-subtitle">CLASSIC ARCADE REBORN</p>
+
+                <div class="best-score-card">
+                    <span class="best-score-label">BEST SCORE</span>
+                    <span class="best-score-value" id="home-highscore">0</span>
+                </div>
+
+                <button class="btn-play" data-action="play">
+                    <span class="btn-play-icon">▶</span> PLAY NOW
+                </button>
+
+                <button class="how-to-play-link" id="btn-how-to-play">
+                    <span>ⓘ</span> How to Play
+                </button>
+            </div>
+
+            <!-- Right: Setup Cards -->
+            <div class="home-setup">
+                <span class="setup-label">GAME SETUP</span>
+                <div class="setup-grid">
+                    <button class="setup-card" data-action="difficulty" id="card-difficulty">
+                        <div class="setup-icon setup-icon-difficulty">⚡</div>
+                        <span class="setup-card-title">Difficulty</span>
+                        <span class="setup-card-value" id="setup-difficulty-val">Easy</span>
+                    </button>
+                    <button class="setup-card" data-action="skins" id="card-skins">
+                        <div class="setup-icon setup-icon-skin">☺</div>
+                        <span class="setup-card-title">Snake Skin</span>
+                        <span class="setup-card-value" id="setup-skin-val">Neon</span>
+                    </button>
+                    <button class="setup-card" data-action="food" id="card-food">
+                        <div class="setup-icon setup-icon-food">🍎</div>
+                        <span class="setup-card-title">Food</span>
+                        <span class="setup-card-value" id="setup-food-val">Mixed</span>
+                    </button>
+                    <button class="setup-card" data-action="maps" id="card-maps">
+                        <div class="setup-icon setup-icon-map">⊞</div>
+                        <span class="setup-card-title">Map Type</span>
+                        <span class="setup-card-value" id="setup-map-val">Classic</span>
                     </button>
                 </div>
+                <button class="setup-settings-btn" data-action="settings">
+                    <div class="setup-icon setup-icon-settings">⚙</div>
+                    <span class="setup-card-title">Settings</span>
+                    <span class="setup-card-value">Configure</span>
+                </button>
             </div>
         </div>
-
-        <!-- ============ GAME SCREEN ============ -->
-        <div id="screen-game" class="screen">
-            <div class="game-container">
-                <div class="game-hud">
-                    <div class="hud-item">
-                        <span class="hud-label">SCORE</span>
-                        <span class="hud-value" id="score">0</span>
-                    </div>
-                    <div class="hud-item center">
-                        <span class="hud-label" id="level-label">LEVEL 1</span>
-                        <div class="pause-indicator" id="pause-indicator">PAUSED</div>
-                    </div>
-                    <div class="hud-item right">
-                        <span class="hud-label">BEST</span>
-                        <span class="hud-value" id="highscore">0</span>
-                    </div>
-                </div>
-                <div class="canvas-wrapper">
-                    <canvas id="game-canvas"></canvas>
-                    <div class="countdown-overlay" id="countdown-overlay">
-                        <span id="countdown-text">3</span>
-                    </div>
-                </div>
-                <div class="mobile-controls" id="mobile-controls">
-                    <button class="ctrl-btn" data-dir="up">&#9650;</button>
-                    <div class="ctrl-row">
-                        <button class="ctrl-btn" data-dir="left">&#9664;</button>
-                        <button class="ctrl-btn" data-dir="down">&#9660;</button>
-                        <button class="ctrl-btn" data-dir="right">&#9654;</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ============ GAME OVER SCREEN ============ -->
-        <div id="screen-gameover" class="screen">
-            <div class="nokia-frame">
-                <div class="nokia-screen gameover-screen">
-                    <h2 class="gameover-title">GAME OVER</h2>
-                    <div class="final-score-box">
-                        <div class="final-score-label">SCORE</div>
-                        <div class="final-score-value" id="final-score">0</div>
-                    </div>
-                    <div class="new-record" id="new-record">&#9733; NEW RECORD! &#9733;</div>
-                    <div class="final-stats">
-                        <div class="stat-row">
-                            <span>Length</span><span id="final-length">0</span>
-                        </div>
-                        <div class="stat-row">
-                            <span>Level</span><span id="final-level">1</span>
-                        </div>
-                        <div class="stat-row">
-                            <span>Best</span><span id="final-highscore">0</span>
-                        </div>
-                    </div>
-                    <div class="gameover-buttons">
-                        <button id="btn-retry" class="menu-btn selected">
-                            <span class="btn-icon">&#8634;</span> Play Again
-                        </button>
-                        <button id="btn-menu" class="menu-btn">
-                            <span class="btn-icon">&#8962;</span> Menu
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sound toggle -->
-        <button id="btn-sound" class="sound-toggle" title="Toggle Sound">
-            <svg id="sound-on-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path
-                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-            </svg>
-            <svg id="sound-off-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"
-                style="display:none">
-                <path
-                    d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
-            </svg>
-        </button>
     </div>
 
-    <script src="js/sound.js"></script>
-    <script src="js/input.js"></script>
+    <!-- ═══════════════════════ HOW TO PLAY MODAL ═══════════════════════ -->
+    <div class="modal-overlay" id="modal-howtoplay">
+        <div class="modal">
+            <h2 class="modal-title">HOW TO PLAY</h2>
+            <div class="howto-content">
+                <p>Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to move the snake.</p>
+                <p>Eat food to grow and score points.</p>
+                <p>Don't hit the walls or yourself!</p>
+                <p>Press <strong>P</strong> or <strong>Esc</strong> to pause.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btn-close-howto">Got It!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ GAME PAGE ═══════════════════════ -->
+    <div id="page-game" class="page">
+        <div class="game-container">
+            <!-- Top HUD -->
+            <div class="game-hud">
+                <button class="hud-btn" id="btn-back-home" title="Back to Menu">✕</button>
+                <div class="hud-score">
+                    <span class="hud-label">SCORE</span>
+                    <span class="hud-value" id="score-display">0</span>
+                </div>
+                <div class="hud-highscore">
+                    <span class="hud-label">BEST</span>
+                    <span class="hud-value" id="highscore-display">0</span>
+                </div>
+                <button class="hud-btn" id="btn-pause" title="Pause">⏸</button>
+            </div>
+
+            <!-- Game Canvas -->
+            <div class="canvas-wrapper">
+                <canvas id="gameCanvas"></canvas>
+                <!-- Countdown Overlay -->
+                <div class="countdown-overlay" id="countdown-overlay">
+                    <span class="countdown-number" id="countdown-number">3</span>
+                </div>
+            </div>
+
+            <!-- Mobile Controls -->
+            <div class="mobile-controls" id="mobile-controls">
+                <button class="ctrl-btn ctrl-up" data-dir="up">▲</button>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn ctrl-left" data-dir="left">◄</button>
+                    <button class="ctrl-btn ctrl-down" data-dir="down">▼</button>
+                    <button class="ctrl-btn ctrl-right" data-dir="right">►</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ SKINS PAGE ═══════════════════════ -->
+    <div id="page-skins" class="page">
+        <div class="skins-layout">
+            <!-- Left: Skin list -->
+            <div class="skins-panel-left">
+                <div class="sub-header">
+                    <button class="back-btn" data-action="home">← Back</button>
+                    <h2>Snake Skins</h2>
+                </div>
+                <div class="skin-grid" id="skin-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <!-- Right: Big preview -->
+            <div class="skins-panel-right">
+                <div class="skin-preview-box">
+                    <canvas id="skin-preview-canvas" width="360" height="360"></canvas>
+                </div>
+                <div class="skin-preview-label" id="skin-preview-label">Classic Green</div>
+                <div class="skin-preview-desc" id="skin-preview-desc">Tap a skin to preview</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ FOOD PAGE ═══════════════════════ -->
+    <div id="page-food" class="page">
+        <div class="skins-layout">
+            <!-- Left: Food list -->
+            <div class="skins-panel-left">
+                <div class="sub-header">
+                    <button class="back-btn" data-action="home">← Back</button>
+                    <h2>Select Food</h2>
+                </div>
+                <div class="skin-grid" id="food-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <!-- Right: Big preview -->
+            <div class="skins-panel-right">
+                <div class="food-preview-box">
+                    <div class="food-preview-emoji" id="food-preview-emoji">🍎</div>
+                </div>
+                <div class="skin-preview-label" id="food-preview-label">Mixed</div>
+                <div class="skin-preview-desc" id="food-preview-desc">A random fruit every time</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ MAPS PAGE ═══════════════════════ -->
+    <div id="page-maps" class="page">
+        <div class="sub-page">
+            <div class="sub-header">
+                <button class="back-btn" data-action="home">← Back</button>
+                <h2>Select Map</h2>
+            </div>
+            <div class="map-grid" id="map-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ SETTINGS PAGE ═══════════════════════ -->
+    <div id="page-settings" class="page">
+        <div class="sub-page">
+            <div class="sub-header">
+                <button class="back-btn" data-action="home">← Back</button>
+                <h2>Settings</h2>
+            </div>
+            <div class="settings-list" id="settings-list">
+                <!-- Sound Toggle -->
+                <div class="setting-row">
+                    <span class="setting-label">Sound Effects</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-sound" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Music Toggle -->
+                <div class="setting-row">
+                    <span class="setting-label">Background Music</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-music" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Game Speed -->
+                <div class="setting-row">
+                    <span class="setting-label">Game Speed</span>
+                    <div class="speed-selector" id="speed-selector">
+                        <button class="speed-btn" data-speed="slow">Slow</button>
+                        <button class="speed-btn active" data-speed="normal">Normal</button>
+                        <button class="speed-btn" data-speed="fast">Fast</button>
+                    </div>
+                </div>
+                <!-- Theme -->
+                <div class="setting-row">
+                    <span class="setting-label">Dark Theme</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="setting-theme" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <!-- Controls -->
+                <div class="setting-row">
+                    <span class="setting-label">Controls</span>
+                    <div class="speed-selector" id="control-selector">
+                        <button class="speed-btn active" data-ctrl="arrows">Arrows</button>
+                        <button class="speed-btn" data-ctrl="wasd">WASD</button>
+                        <button class="speed-btn" data-ctrl="both">Both</button>
+                    </div>
+                </div>
+                <!-- Reset High Score -->
+                <div class="setting-row">
+                    <span class="setting-label">High Score</span>
+                    <button class="btn btn-danger btn-small" id="btn-reset-score">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ PAUSE MODAL ═══════════════════════ -->
+    <div class="modal-overlay" id="modal-pause">
+        <div class="modal">
+            <h2 class="modal-title">PAUSED</h2>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btn-resume">Resume</button>
+                <button class="btn btn-secondary" id="btn-restart-pause">Restart</button>
+                <button class="btn btn-secondary" id="btn-quit">Quit to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════ GAME OVER MODAL ═══════════════════════ -->
+    <div class="modal-overlay" id="modal-gameover">
+        <div class="modal modal-gameover">
+            <h2 class="modal-title gameover-title">GAME OVER</h2>
+            <div class="gameover-stats">
+                <div class="stat">
+                    <span class="stat-label">Score</span>
+                    <span class="stat-value" id="final-score">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Best</span>
+                    <span class="stat-value" id="final-highscore">0</span>
+                </div>
+            </div>
+            <div class="new-highscore-badge" id="new-highscore-badge">🏆 NEW HIGH SCORE!</div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btn-play-again">Play Again</button>
+                <button class="btn btn-secondary" id="btn-menu">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/audio.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
 </body>
 
 </html>

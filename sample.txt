@@ -1,5 +1,0 @@
-Sample Text File
-================
-
-This is a simple placeholder text file for the project.
-Update or remove it as needed.
