@@ -17,7 +17,8 @@ const Game = (() => {
     /* ─── State ─── */
     let canvas, ctx, canvasSize, cellSize;
     let snake, direction, nextDirection, food;
-    let score, highScore, isRunning, isPaused, gameOverFlag;
+    let score, isRunning, isPaused, gameOverFlag, didSetNewHigh;
+    let highScore = parseInt(localStorage.getItem('snakeHighScore') || '0', 10);
     let lastTick, tickInterval, elapsed;
     let animFrame;
     let particles = [];
@@ -232,6 +233,7 @@ const Game = (() => {
         direction = { x: 1, y: 0 };
         nextDirection = { x: 1, y: 0 };
         score = 0;
+        didSetNewHigh = false;
         isRunning = true;
         isPaused = false;
         gameOverFlag = false;
@@ -349,6 +351,7 @@ const Game = (() => {
             // High score check
             if (score > highScore) {
                 highScore = score;
+                didSetNewHigh = true;
                 localStorage.setItem('snakeHighScore', String(highScore));
             }
 
@@ -985,7 +988,7 @@ const Game = (() => {
         ctx.fillRect(0, 0, canvasSize, canvasSize);
 
         // Notify UI
-        const isNewHigh = score > 0 && score >= highScore;
+        const isNewHigh = score > 0 && didSetNewHigh;
         if (isNewHigh) {
             AudioEngine.highScore();
         }

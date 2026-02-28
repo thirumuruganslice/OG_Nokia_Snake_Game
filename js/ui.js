@@ -949,6 +949,7 @@ const UI = (() => {
         // Reset high score
         $('#btn-reset-score').addEventListener('click', () => {
             Game.resetHighScore();
+            updateHighScore(0);
             AudioEngine.click();
             $('#btn-reset-score').textContent = 'Done!';
             setTimeout(() => { $('#btn-reset-score').textContent = 'Reset'; }, 1500);
