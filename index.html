@@ -108,9 +108,17 @@
             <!-- Game Canvas -->
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas"></canvas>
-                <!-- Countdown Overlay -->
-                <div class="countdown-overlay" id="countdown-overlay">
-                    <span class="countdown-number" id="countdown-number">3</span>
+                <!-- Tap To Play Overlay -->
+                <div class="tap-overlay" id="tap-overlay">
+                    <p class="tap-title">PRESS AN ARROW</p>
+                    <div class="tap-arrows">
+                        <button class="tap-arrow tap-up" data-dir="up">▲</button>
+                        <div class="tap-row">
+                            <button class="tap-arrow tap-left" data-dir="left">◄</button>
+                            <button class="tap-arrow tap-down" data-dir="down">▼</button>
+                            <button class="tap-arrow tap-right" data-dir="right">►</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -176,13 +184,24 @@
 
     <!-- ═══════════════════════ MAPS PAGE ═══════════════════════ -->
     <div id="page-maps" class="page">
-        <div class="sub-page">
-            <div class="sub-header">
-                <button class="back-btn" data-action="home">← Back</button>
-                <h2>Select Map</h2>
+        <div class="skins-layout">
+            <!-- Left: Map list -->
+            <div class="skins-panel-left">
+                <div class="sub-header">
+                    <button class="back-btn" data-action="home">← Back</button>
+                    <h2>Select Map</h2>
+                </div>
+                <div class="skin-grid" id="map-grid">
+                    <!-- Populated by JS -->
+                </div>
             </div>
-            <div class="map-grid" id="map-grid">
-                <!-- Populated by JS -->
+            <!-- Right: Big preview -->
+            <div class="skins-panel-right">
+                <div class="map-preview-box">
+                    <canvas id="map-preview-canvas" width="360" height="360"></canvas>
+                </div>
+                <div class="skin-preview-label" id="map-preview-label">Classic Border</div>
+                <div class="skin-preview-desc" id="map-preview-desc">Tap a map to preview</div>
             </div>
         </div>
     </div>

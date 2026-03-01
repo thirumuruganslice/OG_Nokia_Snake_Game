@@ -31,13 +31,15 @@ const UI = (() => {
         finalScore: $('#final-score'),
         finalHighscore: $('#final-highscore'),
         newHighscoreBadge: $('#new-highscore-badge'),
-        countdownOverlay: $('#countdown-overlay'),
-        countdownNumber: $('#countdown-number'),
+        tapOverlay: $('#tap-overlay'),
         skinGrid: $('#skin-grid'),
         skinPreviewCanvas: $('#skin-preview-canvas'),
         skinPreviewLabel: $('#skin-preview-label'),
         skinPreviewDesc: $('#skin-preview-desc'),
         mapGrid: $('#map-grid'),
+        mapPreviewCanvas: $('#map-preview-canvas'),
+        mapPreviewLabel: $('#map-preview-label'),
+        mapPreviewDesc: $('#map-preview-desc'),
         homeHighscore: $('#home-highscore'),
         foodGrid: $('#food-grid'),
         foodPreviewEmoji: $('#food-preview-emoji'),
@@ -46,8 +48,9 @@ const UI = (() => {
     };
 
     let currentPage = 'home';
-    let countdownTimer = null;
+    let tapKeyHandler = null;
     let skinPreviewAnim = null;  // animation frame for preview
+    let mapPreviewAnim = null;   // animation frame for map preview
 
     /* ═══════════════════════ SETTINGS MANAGEMENT ═══════════════════════ */
     const defaults = {
@@ -120,6 +123,12 @@ const UI = (() => {
             skinPreviewAnim = null;
         }
 
+        // Stop map preview animation when leaving maps page
+        if (currentPage === 'maps' && mapPreviewAnim) {
+            cancelAnimationFrame(mapPreviewAnim);
+            mapPreviewAnim = null;
+        }
+
         // Exit current page
         pages[currentPage].classList.remove('active');
         pages[currentPage].classList.add('exit');
@@ -134,52 +143,64 @@ const UI = (() => {
             if (pageName === 'skins' && previewSkinKey) {
                 updateBigPreview(previewSkinKey);
             }
+
+            // Restart map preview animation when entering maps page
+            if (pageName === 'maps' && previewMapKey) {
+                updateMapPreview(previewMapKey);
+            }
         }, 200);
 
         AudioEngine.click();
     }
 
-    /* ═══════════════════════ COUNTDOWN & GAME START ═══════════════════════ */
+    /* ═══════════════════════ TAP TO PLAY & GAME START ═══════════════════════ */
     function startGame() {
         navigateTo('game');
 
-        // Wait for page transition, then countdown
         setTimeout(() => {
             Game.init($('#gameCanvas'));
             Game.resize();
-            showCountdown(() => {
-                Game.start();
+            Game.start();    // sets up map, snake, food — starts render
+            Game.pause();    // freeze tick so player sees the initial state
+            showTapToPlay((dirName) => {
+                Game.setInitialDir(dirName);
+                Game.resume();
                 AudioEngine.startMusic();
             });
         }, 400);
     }
 
-    function showCountdown(callback) {
-        dom.countdownOverlay.classList.add('active');
-        let count = 3;
-        dom.countdownNumber.textContent = count;
-        AudioEngine.countdownTick();
+    function showTapToPlay(callback) {
+        dom.tapOverlay.classList.add('active');
 
-        countdownTimer = setInterval(() => {
-            count--;
-            if (count > 0) {
-                dom.countdownNumber.textContent = count;
-                dom.countdownNumber.style.animation = 'none';
-                // Force reflow
-                void dom.countdownNumber.offsetWidth;
-                dom.countdownNumber.style.animation = '';
-                AudioEngine.countdownTick();
-            } else if (count === 0) {
-                dom.countdownNumber.textContent = 'GO!';
-                dom.countdownNumber.style.fontSize = '48px';
-                AudioEngine.countdownGo();
-            } else {
-                clearInterval(countdownTimer);
-                dom.countdownOverlay.classList.remove('active');
-                dom.countdownNumber.style.fontSize = '';
-                callback();
+        const dirs = ['up', 'down', 'left', 'right'];
+        const keyMap = {
+            ArrowUp: 'up', ArrowDown: 'down',
+            ArrowLeft: 'left', ArrowRight: 'right'
+        };
+
+        function dismiss(dirName) {
+            if (tapKeyHandler) {
+                document.removeEventListener('keydown', tapKeyHandler);
+                tapKeyHandler = null;
             }
-        }, 700);
+            dom.tapOverlay.querySelectorAll('.tap-arrow').forEach(btn =>
+                btn.removeEventListener('click', btnHandler));
+            dom.tapOverlay.classList.remove('active');
+            callback(dirName);
+        }
+
+        tapKeyHandler = (e) => {
+            const dir = keyMap[e.key];
+            if (dir) { e.preventDefault(); dismiss(dir); }
+        };
+        document.addEventListener('keydown', tapKeyHandler);
+
+        function btnHandler(e) {
+            dismiss(e.currentTarget.dataset.dir);
+        }
+        dom.tapOverlay.querySelectorAll('.tap-arrow').forEach(btn =>
+            btn.addEventListener('click', btnHandler));
     }
 
     /* ═══════════════════════ SCORE DISPLAY ═══════════════════════ */
@@ -719,28 +740,37 @@ const UI = (() => {
     }
 
     /* ═══════════════════════ MAPS PAGE ═══════════════════════ */
+    let previewMapKey = null;
+
     function buildMapsPage() {
         const grid = dom.mapGrid;
         grid.innerHTML = '';
 
         Object.entries(Game.MAPS).forEach(([key, map]) => {
             const card = document.createElement('div');
-            card.className = 'map-card' + (userSettings.map === key ? ' selected' : '');
+            card.className = 'skin-card' + (userSettings.map === key ? ' selected' : '');
             card.dataset.map = key;
 
-            const icon = document.createElement('div');
-            icon.className = 'map-icon';
-            icon.textContent = map.icon;
+            // Mini preview canvas
+            const preview = document.createElement('div');
+            preview.className = 'skin-preview';
+            const cvs = document.createElement('canvas');
+            cvs.width = 64;
+            cvs.height = 56;
+            preview.appendChild(cvs);
+            drawMapMiniPreview(cvs, key);
 
+            // Info
             const info = document.createElement('div');
-            info.className = 'map-info';
-            info.innerHTML = `<div class="map-name">${map.name}</div><div class="map-desc">${map.desc}</div>`;
+            info.className = 'skin-info';
+            info.innerHTML = `<div class="skin-name">${map.name}</div><div class="skin-desc">${map.desc}</div>`;
 
+            // Check
             const check = document.createElement('div');
-            check.className = 'map-check';
+            check.className = 'skin-check';
             check.textContent = '✓';
 
-            card.appendChild(icon);
+            card.appendChild(preview);
             card.appendChild(info);
             card.appendChild(check);
 
@@ -748,13 +778,190 @@ const UI = (() => {
                 userSettings.map = key;
                 applySettingsToGame();
                 saveSettings();
-                $$('.map-card').forEach(c => c.classList.remove('selected'));
+                $$('.skin-card[data-map]').forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
+                updateMapPreview(key);
+                updateSetupCards();
                 AudioEngine.click();
             });
 
             grid.appendChild(card);
         });
+
+        // Initialize big preview with current map
+        updateMapPreview(userSettings.map);
+    }
+
+    /* Draw a tiny map thumbnail on a mini canvas */
+    function drawMapMiniPreview(canvas, mapKey) {
+        const c = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        const gs = 20;
+        const cellW = w / gs;
+        const cellH = h / gs;
+        const map = Game.MAPS[mapKey];
+
+        // Background
+        c.fillStyle = '#0f1520';
+        c.fillRect(0, 0, w, h);
+
+        // Checkerboard
+        for (let x = 0; x < gs; x++) {
+            for (let y = 0; y < gs; y++) {
+                if ((x + y) % 2 === 0) {
+                    c.fillStyle = 'rgba(255,255,255,0.03)';
+                    c.fillRect(x * cellW, y * cellH, cellW, cellH);
+                }
+            }
+        }
+
+        // Walls
+        if (map.walls) {
+            c.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+            c.lineWidth = 1.5;
+            c.strokeRect(0, 0, w, h);
+        } else {
+            c.setLineDash([3, 3]);
+            c.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            c.lineWidth = 0.5;
+            c.strokeRect(0, 0, w, h);
+            c.setLineDash([]);
+        }
+
+        // Obstacles
+        const obs = Game.generateObstacles(mapKey);
+        c.fillStyle = '#6b7a8d';
+        for (const o of obs) {
+            c.fillRect(o.x * cellW + 0.5, o.y * cellH + 0.5, cellW - 1, cellH - 1);
+        }
+
+        // Speed icon overlay
+        if (map.speedIncrease) {
+            c.fillStyle = 'rgba(255, 200, 50, 0.6)';
+            c.font = 'bold 16px sans-serif';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText('⚡', w / 2, h / 2);
+        }
+    }
+
+    /* Update the big map preview */
+    function updateMapPreview(mapKey) {
+        previewMapKey = mapKey;
+        const map = Game.MAPS[mapKey];
+        if (!map) return;
+
+        if (dom.mapPreviewLabel) dom.mapPreviewLabel.textContent = map.name;
+        if (dom.mapPreviewDesc) dom.mapPreviewDesc.textContent = map.desc;
+
+        // Start or restart the animated preview
+        if (mapPreviewAnim) cancelAnimationFrame(mapPreviewAnim);
+        animateMapPreview();
+    }
+
+    function animateMapPreview() {
+        const canvas = dom.mapPreviewCanvas;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+        const map = Game.MAPS[previewMapKey];
+        if (!map) return;
+
+        const now = performance.now();
+        const time = now / 1000;
+
+        const gs = Game.GRID_SIZE;
+        const cellW = W / gs;
+        const cellH = H / gs;
+        const isDark = !document.body.classList.contains('light-theme');
+
+        // Background
+        const bgBase = isDark ? '#0a0e17' : '#e8ecf1';
+        const bgAlt = isDark ? '#111827' : '#e2e6ec';
+        ctx.fillStyle = bgBase;
+        ctx.fillRect(0, 0, W, H);
+
+        // Checkerboard
+        for (let x = 0; x < gs; x++) {
+            for (let y = 0; y < gs; y++) {
+                if ((x + y) % 2 === 0) {
+                    ctx.fillStyle = bgAlt;
+                    ctx.fillRect(x * cellW, y * cellH, cellW, cellH);
+                }
+            }
+        }
+
+        // Grid lines
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(180, 195, 215, 0.3)';
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= gs; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * cellW, 0);
+            ctx.lineTo(x * cellW, H);
+            ctx.stroke();
+        }
+        for (let y = 0; y <= gs; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * cellH);
+            ctx.lineTo(W, y * cellH);
+            ctx.stroke();
+        }
+
+        // Draw obstacles with pulsing effect
+        const obs = Game.generateObstacles(previewMapKey);
+        const pulse = 0.85 + Math.sin(time * 2) * 0.15;
+        for (const o of obs) {
+            const ox = o.x * cellW;
+            const oy = o.y * cellH;
+            const pad = 1;
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.fillRect(ox + pad + 0.5, oy + pad + 0.5, cellW - pad * 2, cellH - pad * 2);
+
+            // Main block
+            const r = Math.floor(128 * pulse);
+            const g = Math.floor(144 * pulse);
+            const b = Math.floor(160 * pulse);
+            ctx.fillStyle = `rgb(${r},${g},${b})`;
+            ctx.fillRect(ox + pad, oy + pad, cellW - pad * 2, cellH - pad * 2);
+
+            // Highlight
+            ctx.fillStyle = `rgba(255,255,255,${0.08 * pulse})`;
+            ctx.fillRect(ox + pad + 1, oy + pad + 1, cellW - pad * 2 - 2, cellH - pad * 2 - 2);
+        }
+
+        // Draw wall border — thin outer edge only (matches game: border is CSS-side)
+        if (map.walls) {
+            ctx.save();
+            ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.55)' : 'rgba(100, 116, 139, 0.45)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(2, 2, W - 4, H - 4);
+            ctx.restore();
+        } else {
+            ctx.save();
+            ctx.setLineDash([6, 5]);
+            ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(100, 116, 139, 0.2)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(1, 1, W - 2, H - 2);
+            ctx.restore();
+        }
+
+        // Speed indicator overlay
+        if (map.speedIncrease) {
+            ctx.save();
+            const alpha = 0.15 + Math.sin(time * 4) * 0.1;
+            ctx.fillStyle = `rgba(255, 200, 50, ${alpha})`;
+            ctx.font = 'bold 48px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⚡', W / 2, H * 0.5);
+            ctx.restore();
+        }
+
+        mapPreviewAnim = requestAnimationFrame(animateMapPreview);
     }
 
     /* ═══════════════════════ ANIMATED BACKGROUND ═══════════════════════ */

@@ -24,6 +24,13 @@ const Game = (() => {
     let particles = [];
     let gridFlash = 0;
 
+    /* ─── Blink & Tongue Animation State ─── */
+    let lastBlinkStart = -5000;
+    let nextBlinkDelay = 3000;
+    let isDoubleBlink = false;
+    let lastTongueFlick = -3000;
+    let nextTongueDelay = 2000;
+
     /* ─── Settings (synced from UI) ─── */
     let settings = {
         speed: 'normal',
@@ -129,6 +136,15 @@ const Game = (() => {
 
     /* ─── Map Definitions ─── */
     const MAPS = {
+        arena: {
+            name: 'Open Arena',
+            desc: 'No walls, no obstacles — pure survival',
+            icon: '🏟️',
+            walls: false,
+            wrap: true,
+            obstacles: [],
+            speedIncrease: false
+        },
         classic: {
             name: 'Classic Border',
             desc: 'Traditional walls — hit a wall and it\'s over',
@@ -138,31 +154,13 @@ const Game = (() => {
             obstacles: [],
             speedIncrease: false
         },
-        nowalls: {
-            name: 'No Walls',
-            desc: 'Snake wraps around screen edges',
-            icon: '∞',
-            walls: false,
-            wrap: true,
-            obstacles: [],
-            speedIncrease: false
-        },
-        obstacles: {
-            name: 'Obstacle Box',
-            desc: 'Static obstacles inside the map',
-            icon: '⬛',
-            walls: true,
-            wrap: false,
-            obstacles: [],   // generated dynamically
-            speedIncrease: false
-        },
         maze: {
             name: 'Maze',
             desc: 'Navigate a complex maze layout',
             icon: '🏁',
             walls: true,
             wrap: false,
-            obstacles: [],   // generated dynamically
+            obstacles: [],
             speedIncrease: false
         },
         speed: {
@@ -173,23 +171,85 @@ const Game = (() => {
             wrap: false,
             obstacles: [],
             speedIncrease: true
+        },
+        spiral: {
+            name: 'Spiral',
+            desc: 'Three rings wind into a spiral path',
+            icon: '🌀',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        tunnels: {
+            name: 'Tunnels',
+            desc: 'Narrow corridors to slither through',
+            icon: '🚇',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        cross: {
+            name: 'Cross',
+            desc: 'A giant cross splits the arena into quadrants',
+            icon: '✚',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        fortress: {
+            name: 'Fortress',
+            desc: 'Four corner fortresses block your path',
+            icon: '🏰',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        scatter: {
+            name: 'Scattered',
+            desc: 'Random blocks scattered across the field',
+            icon: '🎲',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        corridor: {
+            name: 'Corridor',
+            desc: 'Zigzag corridors force a winding path',
+            icon: '🔀',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        pinwheel: {
+            name: 'Pinwheel',
+            desc: 'Four rotating L-arms spin across the field',
+            icon: '🔄',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
+        },
+        slalom: {
+            name: 'Slalom',
+            desc: 'Two interlocking L-shapes form an S-curve',
+            icon: '〰️',
+            walls: true,
+            wrap: false,
+            obstacles: [],
+            speedIncrease: false
         }
     };
 
     /* Generate obstacles for map types */
     function generateObstacles(mapKey) {
         const obs = [];
-        if (mapKey === 'obstacles') {
-            // Inner box
-            for (let i = 6; i <= 13; i++) {
-                obs.push({ x: 6, y: i });
-                obs.push({ x: 13, y: i });
-            }
-            for (let i = 7; i <= 12; i++) {
-                obs.push({ x: i, y: 6 });
-                obs.push({ x: i, y: 13 });
-            }
-        } else if (mapKey === 'maze') {
+        if (mapKey === 'maze') {
             // Horizontal walls
             for (let i = 3; i <= 8; i++) obs.push({ x: i, y: 5 });
             for (let i = 11; i <= 16; i++) obs.push({ x: i, y: 5 });
@@ -198,8 +258,100 @@ const Game = (() => {
             // Vertical walls
             for (let i = 7; i <= 12; i++) obs.push({ x: 5, y: i });
             for (let i = 7; i <= 12; i++) obs.push({ x: 14, y: i });
+        } else if (mapKey === 'spiral') {
+            // Ring 1 (2..17) — 2-cell gap at bottom of left wall (y=15,16)
+            for (let i = 2; i <= 17; i++) obs.push({ x: i, y: 2 }); // top full
+            for (let i = 3; i <= 17; i++) obs.push({ x: 17, y: i }); // right full
+            for (let i = 2; i <= 16; i++) obs.push({ x: i, y: 17 }); // bottom
+            for (let i = 3; i <= 14; i++) obs.push({ x: 2, y: i }); // left, gap at y=15,16
+            // Ring 2 (5..14) — 2-cell gap at top-left (x=5,6), left wall starts at y=7
+            for (let i = 8; i <= 14; i++) obs.push({ x: i, y: 5 }); // top, gap at x=5,6
+            for (let i = 5; i <= 14; i++) obs.push({ x: 14, y: i }); // right full
+            for (let i = 5; i <= 13; i++) obs.push({ x: i, y: 14 }); // bottom
+            for (let i = 7; i <= 13; i++) obs.push({ x: 5, y: i }); // left, gap at y=5,6
+        } else if (mapKey === 'tunnels') {
+            // Horizontal tunnel walls with gaps
+            for (let i = 0; i <= 7; i++) obs.push({ x: i, y: 4 });
+            for (let i = 10; i <= 19; i++) obs.push({ x: i, y: 4 });
+            for (let i = 0; i <= 5; i++) obs.push({ x: i, y: 8 });
+            for (let i = 8; i <= 19; i++) obs.push({ x: i, y: 8 });
+            for (let i = 0; i <= 11; i++) obs.push({ x: i, y: 12 });
+            for (let i = 14; i <= 19; i++) obs.push({ x: i, y: 12 });
+            for (let i = 0; i <= 3; i++) obs.push({ x: i, y: 16 });
+            for (let i = 6; i <= 19; i++) obs.push({ x: i, y: 16 });
+        } else if (mapKey === 'cross') {
+            // Vertical pair: columns 9 & 10, gap at rows 8–11
+            for (const x of [9, 10]) {
+                for (let i = 0; i <= 6; i++) obs.push({ x, y: i });
+                for (let i = 13; i <= 19; i++) obs.push({ x, y: i });
+            }
+            // Horizontal pair: rows 9 & 10, gap at columns 8–11
+            for (const y of [9, 10]) {
+                for (let i = 0; i <= 6; i++) obs.push({ x: i, y });
+                for (let i = 13; i <= 19; i++) obs.push({ x: i, y });
+            }
+        } else if (mapKey === 'fortress') {
+            // Top-left fortress
+            for (let i = 1; i <= 5; i++) { obs.push({ x: i, y: 1 }); obs.push({ x: 1, y: i }); }
+            obs.push({ x: 5, y: 2 }); obs.push({ x: 2, y: 5 });
+            // Top-right fortress
+            for (let i = 14; i <= 18; i++) { obs.push({ x: i, y: 1 }); obs.push({ x: 18, y: i - 13 }); }
+            obs.push({ x: 14, y: 2 }); obs.push({ x: 17, y: 5 });
+            // Bottom-left fortress
+            for (let i = 1; i <= 5; i++) obs.push({ x: i, y: 18 });
+            obs.push({ x: 1, y: 14 }); obs.push({ x: 1, y: 15 }); obs.push({ x: 1, y: 16 }); obs.push({ x: 1, y: 17 });
+            obs.push({ x: 2, y: 14 }); obs.push({ x: 5, y: 17 });
+            // Bottom-right fortress
+            for (let i = 14; i <= 18; i++) obs.push({ x: i, y: 18 });
+            obs.push({ x: 18, y: 14 }); obs.push({ x: 18, y: 15 }); obs.push({ x: 18, y: 16 }); obs.push({ x: 18, y: 17 });
+            obs.push({ x: 17, y: 14 }); obs.push({ x: 14, y: 17 });
+        } else if (mapKey === 'scatter') {
+            // Deterministic scattered blocks
+            const positions = [
+                { x: 3, y: 3 }, { x: 7, y: 2 }, { x: 15, y: 4 }, { x: 12, y: 3 },
+                { x: 2, y: 8 }, { x: 6, y: 7 }, { x: 16, y: 7 }, { x: 11, y: 6 },
+                { x: 4, y: 13 }, { x: 8, y: 12 }, { x: 14, y: 11 }, { x: 17, y: 13 },
+                { x: 3, y: 17 }, { x: 9, y: 16 }, { x: 13, y: 17 }, { x: 16, y: 16 },
+                { x: 5, y: 10 }, { x: 10, y: 10 }, { x: 14, y: 9 }, { x: 1, y: 15 },
+                { x: 18, y: 2 }, { x: 18, y: 10 }, { x: 1, y: 5 }, { x: 10, y: 1 }
+            ];
+            positions.forEach(p => obs.push(p));
+        } else if (mapKey === 'corridor') {
+            // Zigzag corridor walls
+            for (let i = 0; i <= 14; i++) obs.push({ x: i, y: 3 });
+            for (let i = 5; i <= 19; i++) obs.push({ x: i, y: 7 });
+            for (let i = 0; i <= 14; i++) obs.push({ x: i, y: 11 });
+            for (let i = 5; i <= 19; i++) obs.push({ x: i, y: 15 });
+        } else if (mapKey === 'pinwheel') {
+            // 4-fold rotationally symmetric pinwheel arms
+            // Arm 1 (NE): up then right
+            for (let i = 2; i <= 8; i++) obs.push({ x: 8, y: i });
+            for (let i = 8; i <= 15; i++) obs.push({ x: i, y: 2 });
+            // Arm 2 (SE): right then down
+            for (let i = 11; i <= 17; i++) obs.push({ x: i, y: 8 });
+            for (let i = 8; i <= 15; i++) obs.push({ x: 17, y: i });
+            // Arm 3 (SW): down then left
+            for (let i = 11; i <= 17; i++) obs.push({ x: 11, y: i });
+            for (let i = 4; i <= 11; i++) obs.push({ x: i, y: 17 });
+            // Arm 4 (NW): left then up
+            for (let i = 2; i <= 8; i++) obs.push({ x: i, y: 11 });
+            for (let i = 4; i <= 11; i++) obs.push({ x: 2, y: i });
+        } else if (mapKey === 'slalom') {
+            // Top-right L
+            for (let i = 6; i <= 13; i++) obs.push({ x: i, y: 4 }); // horizontal top
+            for (let i = 4; i <= 11; i++) obs.push({ x: 13, y: i }); // vertical right drop
+            // Bottom-left L
+            for (let i = 8; i <= 15; i++) obs.push({ x: 6, y: i }); // vertical left drop
+            for (let i = 6; i <= 13; i++) obs.push({ x: i, y: 15 }); // horizontal bottom
         }
-        return obs;
+        // Deduplicate
+        const seen = new Set();
+        return obs.filter(o => {
+            const k = `${o.x},${o.y}`;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
     }
 
     /* ─── Initialize ─── */
@@ -212,12 +364,22 @@ const Game = (() => {
 
     function resize() {
         const wrapper = canvas.parentElement;
-        const size = Math.min(wrapper.clientWidth, wrapper.clientHeight);
+        const hud = document.querySelector('.game-hud');
+        const hudH = hud ? hud.offsetHeight : 64;
+        const gap = 12;       // gap between hud and canvas
+        const pad = 32;       // 16px top + 16px bottom of game-container
+
+        const availW = window.innerWidth - 32; // 16px left + 16px right
+        const availH = window.innerHeight - hudH - gap - pad;
+        const size = Math.floor(Math.min(availW, availH, 560));
+
         canvasSize = size;
         canvas.width = size * window.devicePixelRatio;
         canvas.height = size * window.devicePixelRatio;
         canvas.style.width = size + 'px';
         canvas.style.height = size + 'px';
+        wrapper.style.width = size + 'px';
+        wrapper.style.height = size + 'px';
         ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
         cellSize = size / GRID_SIZE;
     }
@@ -225,11 +387,6 @@ const Game = (() => {
     /* ─── Start New Game ─── */
     function start() {
         // Reset state
-        snake = [
-            { x: 10, y: 10 },
-            { x: 9, y: 10 },
-            { x: 8, y: 10 }
-        ];
         direction = { x: 1, y: 0 };
         nextDirection = { x: 1, y: 0 };
         score = 0;
@@ -240,16 +397,42 @@ const Game = (() => {
         particles = [];
         gridFlash = 0;
         elapsed = 0;
+
+        // Reset animation timers
+        const now = performance.now();
+        lastBlinkStart = now - 10000;
+        nextBlinkDelay = 800;  // first blink happens fast
+        isDoubleBlink = false;
+        lastTongueFlick = now - 10000;
+        nextTongueDelay = 1200; // first tongue flick happens fast
         tickInterval = BASE_SPEED[settings.speed];
         lastTick = performance.now();
 
-        // Generate obstacles for current map
+        // Generate obstacles FIRST so snake & food won't spawn on them
         const mapCfg = MAPS[settings.map];
-        if (settings.map === 'obstacles' || settings.map === 'maze') {
+        const obsMaps = ['maze', 'spiral', 'tunnels', 'cross', 'fortress', 'scatter', 'corridor', 'pinwheel', 'slalom'];
+        if (obsMaps.includes(settings.map)) {
             mapCfg.obstacles = generateObstacles(settings.map);
         } else {
             mapCfg.obstacles = [];
         }
+
+        // Find a safe horizontal starting run of 3 clear cells
+        const obsSet = new Set(mapCfg.obstacles.map(o => `${o.x},${o.y}`));
+        let startX = 10, startY = 10;
+        outer: for (let y = 2; y <= 17; y++) {
+            for (let x = 4; x <= 16; x++) {
+                if (!obsSet.has(`${x},${y}`) && !obsSet.has(`${x - 1},${y}`) && !obsSet.has(`${x - 2},${y}`)) {
+                    startX = x; startY = y;
+                    break outer;
+                }
+            }
+        }
+        snake = [
+            { x: startX, y: startY },
+            { x: startX - 1, y: startY },
+            { x: startX - 2, y: startY }
+        ];
 
         spawnFood();
         resize();
@@ -457,19 +640,13 @@ const Game = (() => {
         for (const obs of obstacles) {
             // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.10)';
-            ctx.beginPath();
-            ctx.roundRect(obs.x * s + pad + 1, obs.y * s + pad + 1, s - pad * 2, s - pad * 2, 4);
-            ctx.fill();
+            ctx.fillRect(obs.x * s + pad + 1, obs.y * s + pad + 1, s - pad * 2, s - pad * 2);
             // Main block
             ctx.fillStyle = '#8090a0';
-            ctx.beginPath();
-            ctx.roundRect(obs.x * s + pad, obs.y * s + pad, s - pad * 2, s - pad * 2, 4);
-            ctx.fill();
+            ctx.fillRect(obs.x * s + pad, obs.y * s + pad, s - pad * 2, s - pad * 2);
             // Highlight
             ctx.fillStyle = '#95a5b5';
-            ctx.beginPath();
-            ctx.roundRect(obs.x * s + pad + 2, obs.y * s + pad + 2, s - pad * 2 - 4, s - pad * 2 - 4, 3);
-            ctx.fill();
+            ctx.fillRect(obs.x * s + pad + 2, obs.y * s + pad + 2, s - pad * 2 - 4, s - pad * 2 - 4);
         }
     }
 
@@ -503,36 +680,22 @@ const Game = (() => {
 
     /* ─── Draw Wall Border ─── */
     function drawBorder() {
+        // Border is now handled by the CSS canvas-wrapper.
+        // Just draw a subtle 1px inner edge line for polish.
         const mapCfg = MAPS[settings.map];
         const isDark = !document.body.classList.contains('light-theme');
-        const inset = 1.5;
 
-        ctx.save();
-        ctx.lineJoin = 'round';
-
-        if (mapCfg.walls) {
-            // Outer shadow ring
-            ctx.strokeStyle = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.12)';
-            ctx.lineWidth = 6;
-            ctx.strokeRect(inset + 1, inset + 1, canvasSize - inset * 2 - 2, canvasSize - inset * 2 - 2);
-
-            // Main border
-            ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.55)' : 'rgba(100, 116, 139, 0.45)';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(inset, inset, canvasSize - inset * 2, canvasSize - inset * 2);
-
-            // Inner highlight
-            ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.6)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(inset + 2, inset + 2, canvasSize - inset * 2 - 4, canvasSize - inset * 2 - 4);
-        } else {
-            // Wrap mode: dashed soft border
-            ctx.setLineDash([8, 6]);
-            ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(100, 116, 139, 0.2)';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(inset, inset, canvasSize - inset * 2, canvasSize - inset * 2);
+        // Update wrapper class for wall/no-wall styling
+        if (canvas && canvas.parentElement) {
+            canvas.parentElement.classList.toggle('no-walls', !mapCfg.walls);
         }
 
+        if (!mapCfg.walls) return;  // no-wall maps have no inner edge
+
+        ctx.save();
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0.5, 0.5, canvasSize - 1, canvasSize - 1);
         ctx.restore();
     }
 
@@ -716,13 +879,42 @@ const Game = (() => {
         drawEyes(snake[0], skin, headR);
     }
 
-    /* ─── Draw Tongue ─── */
+    /* ─── Draw Tongue (smooth extend → hold → retract) ─── */
     function drawTongue(hc, headR, t, skin) {
-        const tongueLen = headR * 1.2;
-        const forkLen = headR * 0.4;
-        const forkSpread = 0.35;
-        const flicker = Math.sin(performance.now() / 100) * 0.5 + 0.5;
-        const extend = 0.4 + flicker * 0.6;
+        const now = performance.now();
+        const timeSinceFlick = now - lastTongueFlick;
+
+        // Tongue cycle: extend (250ms) → hold (500ms) → retract (250ms) = 1000ms total
+        const extendTime = 250;
+        const holdTime = 500;
+        const retractTime = 250;
+        const totalCycle = extendTime + holdTime + retractTime; // 1000ms
+        let extend = 0;
+
+        if (timeSinceFlick < totalCycle) {
+            if (timeSinceFlick < extendTime) {
+                // Smooth extend (ease-out)
+                const p = timeSinceFlick / extendTime;
+                extend = 1 - (1 - p) * (1 - p); // ease-out quad
+            } else if (timeSinceFlick < extendTime + holdTime) {
+                // Hold out with subtle pulse
+                const holdP = (timeSinceFlick - extendTime) / holdTime;
+                extend = 0.85 + 0.15 * Math.sin(holdP * Math.PI * 3); // gentle wiggle
+            } else {
+                // Smooth retract (ease-in)
+                const p = (timeSinceFlick - extendTime - holdTime) / retractTime;
+                extend = 1 - p * p; // ease-in quad (reversed)
+            }
+        } else if (timeSinceFlick > totalCycle + nextTongueDelay) {
+            lastTongueFlick = now;
+            nextTongueDelay = 2000 + Math.random() * 4000;
+        }
+
+        if (extend < 0.02) return; // fully retracted — nothing to draw
+
+        const tongueLen = headR * 1.4;
+        const forkLen = headR * 0.45;
+        const forkSpread = 0.4;
 
         const dx = direction.x;
         const dy = direction.y;
@@ -735,50 +927,63 @@ const Game = (() => {
         const perpY = dx;
         const tongueColor = (skin && skin.tongueColor) || '#e74c6f';
 
+        // Subtle lateral wave while tongue is out
+        const wave = Math.sin(now / 55) * extend * 2;
+        const waveTipX = tipX + perpX * wave;
+        const waveTipY = tipY + perpY * wave;
+
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        ctx.globalAlpha = 0.3 + extend * 0.7;
 
-        // Main tongue stem
+        // Curved tongue stem
+        const midX = (baseX + waveTipX) / 2 + perpX * wave * 0.5;
+        const midY = (baseY + waveTipY) / 2 + perpY * wave * 0.5;
         ctx.beginPath();
         ctx.moveTo(baseX, baseY);
-        ctx.lineTo(tipX, tipY);
-        ctx.lineWidth = 2.5;
+        ctx.quadraticCurveTo(midX, midY, waveTipX, waveTipY);
+        ctx.lineWidth = 2.5 * (0.5 + extend * 0.5);
         ctx.strokeStyle = tongueColor;
         ctx.stroke();
 
-        // Fork prong 1
+        // Fork prong 1 (curved)
+        const fork1X = waveTipX + dx * forkLen * extend + perpX * forkLen * forkSpread;
+        const fork1Y = waveTipY + dy * forkLen * extend + perpY * forkLen * forkSpread;
         ctx.beginPath();
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(
-            tipX + dx * forkLen + perpX * forkLen * forkSpread,
-            tipY + dy * forkLen + perpY * forkLen * forkSpread
+        ctx.moveTo(waveTipX, waveTipY);
+        ctx.quadraticCurveTo(
+            waveTipX + dx * forkLen * extend * 0.5 + perpX * forkLen * forkSpread * 0.3,
+            waveTipY + dy * forkLen * extend * 0.5 + perpY * forkLen * forkSpread * 0.3,
+            fork1X, fork1Y
         );
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = tongueColor;
+        ctx.lineWidth = 2 * (0.5 + extend * 0.5);
         ctx.stroke();
 
-        // Fork prong 2
+        // Fork prong 2 (curved)
+        const fork2X = waveTipX + dx * forkLen * extend - perpX * forkLen * forkSpread;
+        const fork2Y = waveTipY + dy * forkLen * extend - perpY * forkLen * forkSpread;
         ctx.beginPath();
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(
-            tipX + dx * forkLen - perpX * forkLen * forkSpread,
-            tipY + dy * forkLen - perpY * forkLen * forkSpread
+        ctx.moveTo(waveTipX, waveTipY);
+        ctx.quadraticCurveTo(
+            waveTipX + dx * forkLen * extend * 0.5 - perpX * forkLen * forkSpread * 0.3,
+            waveTipY + dy * forkLen * extend * 0.5 - perpY * forkLen * forkSpread * 0.3,
+            fork2X, fork2Y
         );
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = tongueColor;
+        ctx.lineWidth = 2 * (0.5 + extend * 0.5);
         ctx.stroke();
 
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
 
-    /* ─── Draw Eyes on Head (big googly style) ─── */
+    /* ─── Draw Eyes on Head (googly with blink animation) ─── */
     function drawEyes(head, skin, headR) {
         const s = cellSize;
         const cx = head.x * s + s / 2;
         const cy = head.y * s + s / 2;
-        const eyeR = s * 0.22;      // big googly eyes
-        const pupilR = s * 0.12;    // large pupils
+        const eyeR = s * 0.22;
+        const pupilR = s * 0.12;
         const eyeDist = s * 0.24;
         const eyeFwd = s * 0.10;
         let offsets;
@@ -794,26 +999,106 @@ const Game = (() => {
             offsets = [{ ex: -eyeDist, ey: eyeFwd }, { ex: eyeDist, ey: eyeFwd }];
         }
 
+        // ── Blink calculation ──
+        const now = performance.now();
+        const timeSinceBlink = now - lastBlinkStart;
+        let blinkAmount = 0; // 0 = fully open, 1 = fully closed
+        const blinkClose = 120;   // ms to close
+        const blinkHold = 80;     // ms eyes stay shut
+        const blinkOpen = 150;    // ms to open
+        const blinkTotal = blinkClose + blinkHold + blinkOpen; // 350ms full blink
+
+        if (timeSinceBlink < blinkTotal) {
+            if (timeSinceBlink < blinkClose) {
+                // Closing
+                const p = timeSinceBlink / blinkClose;
+                blinkAmount = p * p; // ease-in
+            } else if (timeSinceBlink < blinkClose + blinkHold) {
+                // Holding shut
+                blinkAmount = 1;
+            } else {
+                // Opening
+                const p = (timeSinceBlink - blinkClose - blinkHold) / blinkOpen;
+                blinkAmount = 1 - p * p; // ease-out reversed
+            }
+        } else if (isDoubleBlink && timeSinceBlink > blinkTotal + 100 && timeSinceBlink < blinkTotal + 100 + blinkTotal) {
+            // Double-blink: second blink starts 100ms after first ends
+            const t2 = timeSinceBlink - blinkTotal - 100;
+            if (t2 < blinkClose) {
+                const p = t2 / blinkClose;
+                blinkAmount = p * p;
+            } else if (t2 < blinkClose + blinkHold) {
+                blinkAmount = 1;
+            } else {
+                const p = (t2 - blinkClose - blinkHold) / blinkOpen;
+                blinkAmount = 1 - p * p;
+            }
+        } else if (timeSinceBlink > (isDoubleBlink ? blinkTotal * 2 + 100 : blinkTotal) + nextBlinkDelay) {
+            // Trigger a new blink
+            lastBlinkStart = now;
+            isDoubleBlink = Math.random() < 0.25;
+            nextBlinkDelay = 2000 + Math.random() * 3500;
+        }
+
+        // Clamp
+        blinkAmount = Math.max(0, Math.min(1, blinkAmount));
+
         for (const off of offsets) {
             const ex = cx + off.ex;
             const ey = cy + off.ey;
 
-            // Eye outline/shadow
+            // Eye socket / outline
             ctx.beginPath();
             ctx.arc(ex, ey, eyeR + 2, 0, Math.PI * 2);
             ctx.fillStyle = skin.outline || 'rgba(0,0,0,0.3)';
             ctx.fill();
 
-            // Eye white (sclera) with gradient
+            // ── Fully closed: just draw a line ──
+            if (blinkAmount > 0.95) {
+                ctx.beginPath();
+                ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+                ctx.fillStyle = skin.head;
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(ex - eyeR * 0.8, ey);
+                ctx.lineTo(ex + eyeR * 0.8, ey);
+                ctx.strokeStyle = skin.outline;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                continue;
+            }
+
+            // ── Draw eye contents inside clip ──
+            ctx.save();
             ctx.beginPath();
             ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
-            const eyeGrad = ctx.createRadialGradient(ex - eyeR * 0.15, ey - eyeR * 0.15, 0, ex, ey, eyeR);
+            ctx.clip();
+
+            // Eyelid background (head colour fills when eye squishes)
+            ctx.fillStyle = skin.head;
+            ctx.fillRect(ex - eyeR - 1, ey - eyeR - 1, eyeR * 2 + 2, eyeR * 2 + 2);
+
+            // Squish eye vertically for the blink
+            const openAmount = Math.max(0.08, 1 - blinkAmount);
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.scale(1, openAmount);
+            ctx.translate(-ex, -ey);
+
+            // Sclera with gradient
+            ctx.beginPath();
+            ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+            const eyeGrad = ctx.createRadialGradient(
+                ex - eyeR * 0.15, ey - eyeR * 0.15, 0,
+                ex, ey, eyeR
+            );
             eyeGrad.addColorStop(0, '#ffffff');
             eyeGrad.addColorStop(1, skin.eyeColor || '#f0f0f0');
             ctx.fillStyle = eyeGrad;
             ctx.fill();
 
-            // Pupil (shifted in movement direction for liveliness)
+            // Pupil (shifts in movement direction)
             const pupilShiftX = direction.x * 2.5;
             const pupilShiftY = direction.y * 2.5;
             ctx.beginPath();
@@ -821,23 +1106,47 @@ const Game = (() => {
             ctx.fillStyle = skin.pupilColor;
             ctx.fill();
 
-            // Inner pupil highlight (dark center)
+            // Inner pupil highlight
             ctx.beginPath();
             ctx.arc(ex + pupilShiftX, ey + pupilShiftY, pupilR * 0.5, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
             ctx.fill();
 
-            // Eye shine (big white dot, top-left of eye)
+            // Eye shine (big)
             ctx.beginPath();
             ctx.arc(ex - eyeR * 0.2, ey - eyeR * 0.25, eyeR * 0.3, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255,255,255,0.85)';
             ctx.fill();
 
-            // Small secondary shine
+            // Secondary shine
             ctx.beginPath();
             ctx.arc(ex + eyeR * 0.15, ey + eyeR * 0.1, eyeR * 0.12, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255,255,255,0.4)';
             ctx.fill();
+
+            ctx.restore(); // undo squish scale
+
+            // ── Eyelid creases during partial blink ──
+            if (blinkAmount > 0.08) {
+                const crease = eyeR * openAmount;
+                ctx.strokeStyle = skin.outline;
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+
+                // Top lid edge
+                ctx.beginPath();
+                ctx.moveTo(ex - eyeR * 0.9, ey - crease);
+                ctx.quadraticCurveTo(ex, ey - crease - 3, ex + eyeR * 0.9, ey - crease);
+                ctx.stroke();
+
+                // Bottom lid edge
+                ctx.beginPath();
+                ctx.moveTo(ex - eyeR * 0.9, ey + crease);
+                ctx.quadraticCurveTo(ex, ey + crease + 3, ex + eyeR * 0.9, ey + crease);
+                ctx.stroke();
+            }
+
+            ctx.restore(); // undo clip
         }
     }
 
@@ -976,6 +1285,17 @@ const Game = (() => {
         nextDirection = d;
     }
 
+    function setInitialDir(dirName) {
+        const map = {
+            up: { x: 0, y: -1 },
+            down: { x: 0, y: 1 },
+            left: { x: -1, y: 0 },
+            right: { x: 1, y: 0 }
+        };
+        const d = map[dirName];
+        if (d) { direction = { ...d }; nextDirection = { ...d }; }
+    }
+
     /* ─── Game Over ─── */
     function doGameOver() {
         gameOverFlag = true;
@@ -1040,6 +1360,7 @@ const Game = (() => {
         MAPS,
         FOODS,
         GRID_SIZE,
+        generateObstacles,
         init,
         resize,
         start,
@@ -1047,6 +1368,7 @@ const Game = (() => {
         pause,
         resume,
         setDirection,
+        setInitialDir,
         applySettings,
         getSettings,
         getHighScore,
